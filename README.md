@@ -5,12 +5,12 @@ booklet, with turnable pages, and was an update of [pdfjs-flipbook](https://gith
 
 ## Installation & Usage
 1. Upload the flipbook-js code onto your server.
-2. Open the page in your browser, passing a hosted filepath http://your.domain.com/flipbook-js/web/viewer.html?file=pdf.pdf
+2. Open the page in your browser, passing a hosted filepath http://example.com/flipbook-js/web/viewer.html?file=pdf.pdf
 3. Start flipping!
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-Please make sure to update tests as appropriate.
+The forked codebase isn't the tidiest in the world - so any improvements are welcome.
 
 ## License
 
