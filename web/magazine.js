@@ -174,7 +174,7 @@ var MagazineView = {
 
     // Calculate the base scale for fitting the page to the container
     const baseScale = Math.min(
-        ($("#mainContainer").height() - 100) / unscaledViewport.height,
+        ($("#mainContainer").height() - 120) / unscaledViewport.height,
         ($("#mainContainer").width() - 80) / divider / unscaledViewport.width
     );
 
@@ -363,7 +363,7 @@ var MagazineView = {
         height: $("#viewer .canvasWrapper canvas")[0].height,
         pages: PDFViewerApplication.pdfDocument.numPages,
         page: 1,
-        elevation: 100,
+        elevation: 50,
         duration: 600,
         acceleration: !MagazineView.isChrome(),
         when: {
