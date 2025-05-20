@@ -23,6 +23,7 @@ var MagazineView = {
   pageCache: {}, // Cache for rendered pages
   pageLoadQueue: [], // Queue for pages to preload
   isLoading: false, // Flag to track if pages are currently being loaded
+  devicePixelRatio: window.devicePixelRatio || 1, // Get device pixel ratio for high-DPI displays
 
   init: function() {
     //Add button download on magazineMode
@@ -148,7 +149,7 @@ var MagazineView = {
     // Load and render the page
     PDFViewerApplication.pdfDocument.getPage(pageNumber).then(function(page) {
       MagazineView.renderPageToCache(page, function() {
-        // Continue with next page in queue
+        // Continue with the next page in the queue
         setTimeout(MagazineView.processPageQueue, 0);
       });
     }).catch(function(error) {
@@ -157,40 +158,54 @@ var MagazineView = {
     });
   },
 
-  // Render a page to the cache
+  // Render a page to the cache with improved resolution
   renderPageToCache: function(page, callback) {
     const pageNumber = page.pageNumber;
 
-    // Skip if already in cache
+    // Skip if already in the cache
     if (MagazineView.pageCache[pageNumber]) {
       if (callback) callback();
       return;
     }
 
     const destinationCanvas = document.createElement("canvas");
-
     const unscaledViewport = page.getViewport(1);
     const divider = MagazineView.layout == "double" ? 2 : 1;
 
-    const scale = Math.min(
-        ($("#mainContainer").height() - 20) / unscaledViewport.height,
+    // Calculate the base scale for fitting the page to the container
+    const baseScale = Math.min(
+        ($("#mainContainer").height() - 100) / unscaledViewport.height,
         ($("#mainContainer").width() - 80) / divider / unscaledViewport.width
     );
 
-    const viewport = page.getViewport(scale);
+    // Apply device pixel ratio to improve rendering on high-DPI displays
+    const renderScale = baseScale * MagazineView.devicePixelRatio;
 
+    // Create a viewport with the enhanced scale
+    const viewport = page.getViewport(renderScale);
+
+    // Set canvas dimensions to the enhanced size
     destinationCanvas.height = viewport.height;
     destinationCanvas.width = viewport.width;
+
+    // Apply CSS scaling to display at the correct size
+    destinationCanvas.style.height = (viewport.height / MagazineView.devicePixelRatio) + 'px';
+    destinationCanvas.style.width = (viewport.width / MagazineView.devicePixelRatio) + 'px';
+
     destinationCanvas.setAttribute("data-page-number", pageNumber);
     destinationCanvas.id = "magCanvas" + pageNumber;
+    destinationCanvas.setAttribute("data-base-scale", baseScale);
+    destinationCanvas.setAttribute("data-render-scale", renderScale);
 
     const renderContext = {
       canvasContext: destinationCanvas.getContext("2d"),
-      viewport: viewport
+      viewport: viewport,
+      enableWebGL: true, // Enable WebGL for better rendering if available
+      renderInteractiveForms: true
     };
 
     page.render(renderContext).promise.then(function() {
-      // Store the rendered canvas in cache
+      // Store the rendered canvas in the cache
       MagazineView.pageCache[pageNumber] = destinationCanvas;
 
       if (callback) callback();
@@ -200,18 +215,33 @@ var MagazineView = {
     });
   },
 
-  // Get a page from cache or render it
+  // Get a page from the cache or render it in-line
   getPageFromCache: function(pageNumber, callback) {
     if (MagazineView.pageCache[pageNumber]) {
       // Return a clone of the cached canvas
       const cachedCanvas = MagazineView.pageCache[pageNumber];
       const clonedCanvas = document.createElement('canvas');
+
+      // Copy dimensions and properties from cached canvas
       clonedCanvas.width = cachedCanvas.width;
       clonedCanvas.height = cachedCanvas.height;
+      clonedCanvas.style.width = cachedCanvas.style.width;
+      clonedCanvas.style.height = cachedCanvas.style.height;
       clonedCanvas.setAttribute("data-page-number", pageNumber);
       clonedCanvas.id = "magCanvas" + pageNumber;
 
+      // Copy any additional attributes
+      if (cachedCanvas.hasAttribute("data-base-scale")) {
+        clonedCanvas.setAttribute("data-base-scale", cachedCanvas.getAttribute("data-base-scale"));
+      }
+      if (cachedCanvas.hasAttribute("data-render-scale")) {
+        clonedCanvas.setAttribute("data-render-scale", cachedCanvas.getAttribute("data-render-scale"));
+      }
+
       const ctx = clonedCanvas.getContext('2d');
+      // Use imageSmoothingQuality for better rendering
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.drawImage(cachedCanvas, 0, 0);
 
       callback(clonedCanvas);
@@ -588,20 +618,30 @@ var MagazineView = {
           if (!isInit) {
             if ($(magazine).turn("hasPage", pages[i])) {
               var oldCanvas = $("#magCanvas" + pages[i])[0];
-              oldCanvas.width = cachedCanvas.width;
-              oldCanvas.height = cachedCanvas.height;
+              if (oldCanvas) {
+                oldCanvas.width = cachedCanvas.width;
+                oldCanvas.height = cachedCanvas.height;
+                oldCanvas.style.width = cachedCanvas.style.width;
+                oldCanvas.style.height = cachedCanvas.style.height;
 
-              var oldCtx = oldCanvas.getContext("2d");
-              oldCtx.drawImage(cachedCanvas, 0, 0);
+                var oldCtx = oldCanvas.getContext("2d");
+                oldCtx.imageSmoothingEnabled = true;
+                oldCtx.imageSmoothingQuality = 'high';
+                oldCtx.drawImage(cachedCanvas, 0, 0);
+              }
             } else {
               // Clone the cached canvas for adding to magazine
               const clonedCanvas = document.createElement('canvas');
               clonedCanvas.width = cachedCanvas.width;
               clonedCanvas.height = cachedCanvas.height;
+              clonedCanvas.style.width = cachedCanvas.style.width;
+              clonedCanvas.style.height = cachedCanvas.style.height;
               clonedCanvas.setAttribute("data-page-number", pages[i]);
               clonedCanvas.id = "magCanvas" + pages[i];
 
               const ctx = clonedCanvas.getContext('2d');
+              ctx.imageSmoothingEnabled = true;
+              ctx.imageSmoothingQuality = 'high';
               ctx.drawImage(cachedCanvas, 0, 0);
 
               $(magazine).turn("addPage", $(clonedCanvas), pages[i]);
@@ -611,10 +651,14 @@ var MagazineView = {
             const clonedCanvas = document.createElement('canvas');
             clonedCanvas.width = cachedCanvas.width;
             clonedCanvas.height = cachedCanvas.height;
+            clonedCanvas.style.width = cachedCanvas.style.width;
+            clonedCanvas.style.height = cachedCanvas.style.height;
             clonedCanvas.setAttribute("data-page-number", pages[i]);
             clonedCanvas.id = "magCanvas" + pages[i];
 
             const ctx = clonedCanvas.getContext('2d');
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
             ctx.drawImage(cachedCanvas, 0, 0);
 
             $("#magazine").append($(clonedCanvas));
@@ -639,20 +683,30 @@ var MagazineView = {
               if (!isInit) {
                 if ($(magazine).turn("hasPage", pageNumber)) {
                   var oldCanvas = $("#magCanvas" + pageNumber)[0];
-                  oldCanvas.width = cachedCanvas.width;
-                  oldCanvas.height = cachedCanvas.height;
+                  if (oldCanvas) {
+                    oldCanvas.width = cachedCanvas.width;
+                    oldCanvas.height = cachedCanvas.height;
+                    oldCanvas.style.width = cachedCanvas.style.width;
+                    oldCanvas.style.height = cachedCanvas.style.height;
 
-                  var oldCtx = oldCanvas.getContext("2d");
-                  oldCtx.drawImage(cachedCanvas, 0, 0);
+                    var oldCtx = oldCanvas.getContext("2d");
+                    oldCtx.imageSmoothingEnabled = true;
+                    oldCtx.imageSmoothingQuality = 'high';
+                    oldCtx.drawImage(cachedCanvas, 0, 0);
+                  }
                 } else {
                   // Clone the cached canvas for adding to magazine
                   const clonedCanvas = document.createElement('canvas');
                   clonedCanvas.width = cachedCanvas.width;
                   clonedCanvas.height = cachedCanvas.height;
+                  clonedCanvas.style.width = cachedCanvas.style.width;
+                  clonedCanvas.style.height = cachedCanvas.style.height;
                   clonedCanvas.setAttribute("data-page-number", pageNumber);
                   clonedCanvas.id = "magCanvas" + pageNumber;
 
                   const ctx = clonedCanvas.getContext('2d');
+                  ctx.imageSmoothingEnabled = true;
+                  ctx.imageSmoothingQuality = 'high';
                   ctx.drawImage(cachedCanvas, 0, 0);
 
                   $(magazine).turn("addPage", $(clonedCanvas), pageNumber);
@@ -662,10 +716,14 @@ var MagazineView = {
                 const clonedCanvas = document.createElement('canvas');
                 clonedCanvas.width = cachedCanvas.width;
                 clonedCanvas.height = cachedCanvas.height;
+                clonedCanvas.style.width = cachedCanvas.style.width;
+                clonedCanvas.style.height = cachedCanvas.style.height;
                 clonedCanvas.setAttribute("data-page-number", pageNumber);
                 clonedCanvas.id = "magCanvas" + pageNumber;
 
                 const ctx = clonedCanvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
                 ctx.drawImage(cachedCanvas, 0, 0);
 
                 $("#magazine").append($(clonedCanvas));
