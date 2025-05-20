@@ -60,6 +60,26 @@ var MagazineView = {
           MagazineView.launchMagazineMode,
           true
       );
+
+      const waitForLoadInterval = setInterval(() => {
+        if (
+            window.PDFViewerApplication &&
+            PDFViewerApplication.pdfLoadingTask &&
+            PDFViewerApplication.pdfLoadingTask.onProgress === null
+        ) {
+          clearInterval(waitForLoadInterval);
+
+          PDFViewerApplication.pdfLoadingTask.onProgress = function (progressData) {
+            if (progressData.total) {
+              const percent = (progressData.loaded / progressData.total) * 100;
+              console.log(`PDF Loading: ${Math.round(percent)}%`);
+              $("#loading-percentage").text(`Loading: ${Math.round(percent)}%`);
+            } else {
+              console.log(`PDF Loaded: ${progressData.loaded} bytes`);
+            }
+          };
+        }
+      }, 100);
     } else {
       $("#overlay").hide();
     }
