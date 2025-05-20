@@ -10,7 +10,7 @@ booklet, with turnable pages, and was an update of [pdfjs-flipbook](https://gith
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
-The forked codebase isn't the tidiest in the world - so any improvements are welcome.
+Any improvements are welcome.
 
 ## License
 
