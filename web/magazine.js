@@ -66,7 +66,7 @@ var MagazineView = {
         if (
             window.PDFViewerApplication &&
             PDFViewerApplication.pdfLoadingTask &&
-            PDFViewerApplication.pdfLoadingTask.onProgress === null
+            PDFViewerApplication.pdfLoadingTask.onProgress !== null
         ) {
           console.log("Attaching PDF.js loading listner...");
           clearInterval(waitForLoadInterval);
