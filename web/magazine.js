@@ -178,54 +178,70 @@ var MagazineView = {
     });
   },
 
-  // Render a page to the cache with improved resolution
+  // Render a page to the cache
   renderPageToCache: function(page, callback) {
     const pageNumber = page.pageNumber;
 
-    // Skip if already in the cache
+    // Skip if already in cache
     if (MagazineView.pageCache[pageNumber]) {
       if (callback) callback();
       return;
     }
 
     const destinationCanvas = document.createElement("canvas");
+
+    // A4 aspect ratio is 1:√2 (approximately 1:1.414)
+    const A4_ASPECT_RATIO = 1 / 1.414;
+
     const unscaledViewport = page.getViewport(1);
     const divider = MagazineView.layout == "double" ? 2 : 1;
 
-    // Calculate the base scale for fitting the page to the container
-    const baseScale = Math.min(
-        ($("#mainContainer").height() - 120) / unscaledViewport.height,
-        ($("#mainContainer").width() - 80) / divider / unscaledViewport.width
-    );
+    // Get the container dimensions
+    const containerWidth = $("#mainContainer").width();
+    const containerHeight = $("#mainContainer").height();
 
-    // Apply device pixel ratio to improve rendering on high-DPI displays
-    const renderScale = baseScale * MagazineView.devicePixelRatio;
+    // Maximum available width based on layout
+    const maxAvailableWidth = containerWidth / divider;
 
-    // Create a viewport with the enhanced scale
-    const viewport = page.getViewport(renderScale);
+    // Calculate scale to fit width while maintaining A4 aspect ratio
+    let baseScale = maxAvailableWidth / unscaledViewport.width;
 
-    // Set canvas dimensions to the enhanced size
-    destinationCanvas.height = viewport.height;
-    destinationCanvas.width = viewport.width;
+    // Check if the height would fit when scaled by width
+    const scaledHeight = unscaledViewport.width * baseScale / A4_ASPECT_RATIO;
+    if (scaledHeight > containerHeight) {
+      // If too tall, scale based on height instead
+      baseScale = containerHeight / (unscaledViewport.width / A4_ASPECT_RATIO);
+    }
 
-    // Apply CSS scaling to display at the correct size
-    destinationCanvas.style.height = (viewport.height / MagazineView.devicePixelRatio) + 'px';
-    destinationCanvas.style.width = (viewport.width / MagazineView.devicePixelRatio) + 'px';
+    // Apply device pixel ratio for high-DPI displays
+    const pixelRatio = MagazineView.devicePixelRatio;
+
+    // Create a viewport with the calculated scale
+    const viewport = page.getViewport(baseScale);
+
+    // Set canvas dimensions
+    destinationCanvas.width = viewport.width * pixelRatio;
+    destinationCanvas.height = viewport.height * pixelRatio;
+
+    // Set display size via CSS (actual size on screen)
+    destinationCanvas.style.width = viewport.width + "px";
+    destinationCanvas.style.height = viewport.height + "px";
 
     destinationCanvas.setAttribute("data-page-number", pageNumber);
     destinationCanvas.id = "magCanvas" + pageNumber;
-    destinationCanvas.setAttribute("data-base-scale", baseScale);
-    destinationCanvas.setAttribute("data-render-scale", renderScale);
+
+    const ctx = destinationCanvas.getContext("2d");
+    ctx.scale(pixelRatio, pixelRatio); // Scale the context for high-DPI
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
 
     const renderContext = {
-      canvasContext: destinationCanvas.getContext("2d"),
-      viewport: viewport,
-      enableWebGL: true, // Enable WebGL for better rendering if available
-      renderInteractiveForms: true
+      canvasContext: ctx,
+      viewport: viewport
     };
 
     page.render(renderContext).promise.then(function() {
-      // Store the rendered canvas in the cache
+      // Store the rendered canvas in cache
       MagazineView.pageCache[pageNumber] = destinationCanvas;
 
       if (callback) callback();
@@ -378,14 +394,11 @@ var MagazineView = {
       // Initialize turn.js
       $("#magazine").turn({
         autoCenter: true,
-        display: "single",
-        width: $("#viewer .canvasWrapper canvas")[0].width,
-        height: $("#viewer .canvasWrapper canvas")[0].height,
-        pages: PDFViewerApplication.pdfDocument.numPages,
-        page: 1,
+        display: MagazineView.layout,
+        acceleration: !MagazineView.isChrome(),
         elevation: 50,
         duration: 600,
-        acceleration: !MagazineView.isChrome(),
+        pages: MagazineView.maxPages,
         when: {
           missing: function(event, pages) {
             // Show loading indicator
@@ -441,6 +454,38 @@ var MagazineView = {
           }
         }
       });
+
+      setTimeout(function() {
+        if ($("#magazine canvas").length > 0) {
+          const firstCanvas = $("#magazine canvas")[0];
+          const canvasWidth = parseFloat(firstCanvas.style.width);
+          const canvasHeight = parseFloat(firstCanvas.style.height);
+
+          let magazineWidth, magazineHeight;
+
+          if (MagazineView.layout === "double") {
+            magazineWidth = canvasWidth * 2;
+            magazineHeight = canvasHeight;
+          } else {
+            magazineWidth = canvasWidth;
+            magazineHeight = canvasHeight;
+          }
+
+          // Set the magazine size directly
+          $("#magazine").turn("size", magazineWidth, magazineHeight);
+
+          // Center the magazine in the container
+          const marginTop = ($(window).height() - magazineHeight) / 2;
+          $("#magazine").css({
+            margin: `${marginTop}px auto`
+          });
+
+          // If we need to go to a specific page
+          if (MagazineView.currentPage > 1) {
+            $("#magazine").turn("page", MagazineView.currentPage);
+          }
+        }
+      }, 100);
 
       MagazineView.showHidePageButtons(MagazineView.currentPage);
 
@@ -542,8 +587,45 @@ var MagazineView = {
         }
 
         $("#overlay").fadeOut();
+        MagazineView.fixPageAspectRatio();
       }, 10);
     });
+
+    MagazineView.fixPageAspectRatio();
+  },
+
+  fixPageAspectRatio: function() {
+    // A4 aspect ratio is 1:√2 (approximately 1:1.414)
+    const A4_ASPECT_RATIO = 1 / 1.414;
+
+    $("#magazine canvas").each(function() {
+      const canvas = $(this);
+      const width = parseFloat(canvas.css("width"));
+      const correctHeight = width / A4_ASPECT_RATIO;
+
+      // Fix the height to maintain A4 aspect ratio
+      canvas.css("height", correctHeight + "px");
+    });
+
+    // After fixing all pages, resize the magazine accordingly
+    if ($("#magazine canvas").length > 0) {
+      const firstCanvas = $("#magazine canvas")[0];
+      const canvasWidth = parseFloat(firstCanvas.style.width);
+      const canvasHeight = parseFloat(firstCanvas.style.height);
+
+      let magazineWidth, magazineHeight;
+
+      if (MagazineView.layout === "double") {
+        magazineWidth = canvasWidth * 2;
+        magazineHeight = canvasHeight;
+      } else {
+        magazineWidth = canvasWidth;
+        magazineHeight = canvasHeight;
+      }
+
+      // Update the magazine size
+      $("#magazine").turn("size", magazineWidth, magazineHeight);
+    }
   },
 
   showHidePageButtons: function(page) {
