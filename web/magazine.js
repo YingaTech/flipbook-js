@@ -62,13 +62,14 @@ var MagazineView = {
       );
 
       const waitForLoadInterval = setInterval(() => {
+        console.log("Waiting for PDF loading task...");
         if (
             window.PDFViewerApplication &&
             PDFViewerApplication.pdfLoadingTask &&
             PDFViewerApplication.pdfLoadingTask.onProgress === null
         ) {
+          console.log("Attaching PDF.js loading listner...");
           clearInterval(waitForLoadInterval);
-
           PDFViewerApplication.pdfLoadingTask.onProgress = function (progressData) {
             if (progressData.total) {
               const percent = (progressData.loaded / progressData.total) * 100;
