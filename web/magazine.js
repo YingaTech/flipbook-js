@@ -584,27 +584,39 @@ var MagazineView = {
             MagazineView.isZoom = !MagazineView.isZoom;
           });
         }
-
-        $("#overlay").fadeOut();
         MagazineView.fixPageAspectRatio();
+        $("#overlay").fadeOut();
       }, 10);
     });
-
-    MagazineView.fixPageAspectRatio();
   },
 
   fixPageAspectRatio: function() {
-    // A4 aspect ratio is 1:√2 (approximately 1:1.414)
-    const A4_ASPECT_RATIO = 1 / 1.414;
+    if(MagazineView.layout !== "double")
+    {
+      // A4 aspect ratio is 1:√2 (approximately 1:1.414)
+      const A4_ASPECT_RATIO = 1 / 1.414;
 
-    $("#magazine canvas").each(function() {
-      const canvas = $(this);
-      const width = parseFloat(canvas.css("width"));
-      const correctHeight = width / A4_ASPECT_RATIO;
+      $("#magazine canvas").each(function() {
+        const canvas = $(this);
+        const width = parseFloat(canvas.css("width"));
+        const correctHeight = width / A4_ASPECT_RATIO;
 
-      // Fix the height to maintain A4 aspect ratio
-      canvas.css("height", correctHeight + "px");
-    });
+        // Fix the height to maintain A4 aspect ratio
+        canvas.css("height", correctHeight + "px");
+      });
+    } else {
+      // A4 aspect ratio is (width / height) to correct width from height
+      const A4_ASPECT_RATIO = 11.67 / 8.27;
+
+      $("#magazine canvas").each(function() {
+        const canvas = $(this);
+        const height = parseFloat(canvas.css("height"));
+        const correctWidth = height / A4_ASPECT_RATIO;
+
+        // Fix the height to maintain A4 aspect ratio
+        canvas.css("width", correctWidth + "px");
+      });
+    }
 
     // After fixing all pages, resize the magazine accordingly
     if ($("#magazine canvas").length > 0) {
