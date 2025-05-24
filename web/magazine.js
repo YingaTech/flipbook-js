@@ -533,14 +533,14 @@ var MagazineView = {
             max: MagazineView.maxScale,
             flipbook: $("#magazine"),
             when: {
-              doubleTap: function(event) {
-                if ($(this).zoom("value") == 1) {
-                  $("#magazine").removeClass("transition").removeClass("animated").addClass("zoom-in");
-                  $(this).zoom("zoomIn", event);
-                } else {
-                  $(this).zoom("zoomOut");
-                }
-              },
+              // doubleTap: function(event) {
+              //   if ($(this).zoom("value") == 1) {
+              //     $("#magazine").removeClass("transition").removeClass("animated").addClass("zoom-in");
+              //     $(this).zoom("zoomIn", event);
+              //   } else {
+              //     $(this).zoom("zoomOut");
+              //   }
+              // },
               resize: function(event, scale, page, pageElement) {
                 MagazineView.currentScale = scale;
                 // Resize handling improved to use cached pages
