@@ -212,37 +212,43 @@ var MagazineView = {
       baseScale = containerHeight / (unscaledViewport.width / A4_ASPECT_RATIO);
     }
 
-    // Apply device pixel ratio for high-DPI displays
-    const pixelRatio = MagazineView.devicePixelRatio;
+    // IMPROVEMENT: Render at higher scale for better quality
+    const QUALITY_MULTIPLIER = 2; // Render at 2x resolution
+    const renderScale = baseScale * QUALITY_MULTIPLIER;
 
-    // Create a viewport with the calculated scale
-    const viewport = page.getViewport(baseScale);
+    // Get viewports
+    const renderViewport = page.getViewport(renderScale);
+    const displayViewport = page.getViewport(baseScale);
 
-    // Set canvas dimensions
-    destinationCanvas.width = viewport.width * pixelRatio;
-    destinationCanvas.height = viewport.height * pixelRatio;
+    // Set canvas internal resolution (what gets rendered)
+    destinationCanvas.width = renderViewport.width;
+    destinationCanvas.height = renderViewport.height;
 
-    // Set display size via CSS (actual size on screen)
-    destinationCanvas.style.width = viewport.width + "px";
-    destinationCanvas.style.height = viewport.height + "px";
+    // Set canvas display size (what user sees) - CRITICAL!
+    destinationCanvas.style.width = displayViewport.width + "px";
+    destinationCanvas.style.height = displayViewport.height + "px";
 
+    // Store information for later use
     destinationCanvas.setAttribute("data-page-number", pageNumber);
+    destinationCanvas.setAttribute("data-display-width", displayViewport.width);
+    destinationCanvas.setAttribute("data-display-height", displayViewport.height);
     destinationCanvas.id = "magCanvas" + pageNumber;
 
     const ctx = destinationCanvas.getContext("2d");
-    ctx.scale(pixelRatio, pixelRatio); // Scale the context for high-DPI
+
+    // Enhanced rendering settings
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
     const renderContext = {
       canvasContext: ctx,
-      viewport: viewport
+      viewport: renderViewport,
+      intent: 'display'
     };
 
     page.render(renderContext).promise.then(function() {
       // Store the rendered canvas in cache
       MagazineView.pageCache[pageNumber] = destinationCanvas;
-
       if (callback) callback();
     }).catch(function(error) {
       console.error("Error rendering page:", error);
@@ -253,33 +259,35 @@ var MagazineView = {
   // Get a page from the cache or render it in-line
   getPageFromCache: function(pageNumber, callback) {
     if (MagazineView.pageCache[pageNumber]) {
-      // Return a clone of the cached canvas
       const cachedCanvas = MagazineView.pageCache[pageNumber];
-      const clonedCanvas = document.createElement('canvas');
 
-      // Copy dimensions and properties from cached canvas
-      clonedCanvas.width = cachedCanvas.width;
-      clonedCanvas.height = cachedCanvas.height;
-      clonedCanvas.style.width = cachedCanvas.style.width;
-      clonedCanvas.style.height = cachedCanvas.style.height;
-      clonedCanvas.setAttribute("data-page-number", pageNumber);
-      clonedCanvas.id = "magCanvas" + pageNumber;
+      // Get the intended display size from the cached canvas attributes
+      const displayWidth = parseFloat(cachedCanvas.getAttribute("data-display-width"));
+      const displayHeight = parseFloat(cachedCanvas.getAttribute("data-display-height"));
 
-      // Copy any additional attributes
-      if (cachedCanvas.hasAttribute("data-base-scale")) {
-        clonedCanvas.setAttribute("data-base-scale", cachedCanvas.getAttribute("data-base-scale"));
-      }
-      if (cachedCanvas.hasAttribute("data-render-scale")) {
-        clonedCanvas.setAttribute("data-render-scale", cachedCanvas.getAttribute("data-render-scale"));
-      }
+      // Create display canvas at correct size
+      const displayCanvas = document.createElement('canvas');
 
-      const ctx = clonedCanvas.getContext('2d');
-      // Use imageSmoothingQuality for better rendering
+      // Account for device pixel ratio for crisp display
+      const pixelRatio = Math.max(window.devicePixelRatio || 1, 1);
+
+      displayCanvas.width = displayWidth * pixelRatio;
+      displayCanvas.height = displayHeight * pixelRatio;
+      displayCanvas.style.width = displayWidth + "px";
+      displayCanvas.style.height = displayHeight + "px";
+
+      displayCanvas.setAttribute("data-page-number", pageNumber);
+      displayCanvas.id = "magCanvas" + pageNumber;
+
+      const ctx = displayCanvas.getContext('2d');
+      ctx.scale(pixelRatio, pixelRatio);
       ctx.imageSmoothingEnabled = true;
       ctx.imageSmoothingQuality = 'high';
-      ctx.drawImage(cachedCanvas, 0, 0);
 
-      callback(clonedCanvas);
+      // Draw the high-res cached canvas scaled down to display size
+      ctx.drawImage(cachedCanvas, 0, 0, displayWidth, displayHeight);
+
+      callback(displayCanvas);
     } else {
       // Render the page if not in cache
       PDFViewerApplication.pdfDocument.getPage(pageNumber).then(function(page) {
@@ -290,6 +298,23 @@ var MagazineView = {
         console.error("Error getting page:", error);
         callback(null);
       });
+    }
+  },
+
+  getOptimalRenderScale: function() {
+    // Adjust render scale based on device capabilities
+    const deviceMemory = navigator.deviceMemory || 4; // Default to 4GB if unknown
+    const pixelRatio = window.devicePixelRatio || 1;
+
+    // Higher quality for devices with more memory and high-DPI displays
+    if (deviceMemory >= 8 && pixelRatio >= 2) {
+      return 3; // Very high quality
+    } else if (deviceMemory >= 4 && pixelRatio >= 1.5) {
+      return 2.5; // High quality
+    } else if (deviceMemory >= 2) {
+      return 2; // Standard high quality
+    } else {
+      return 1.5; // Lower quality for limited devices
     }
   },
 
