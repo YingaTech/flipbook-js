@@ -213,7 +213,8 @@ var MagazineView = {
     }
 
     // IMPROVEMENT: Render at higher scale for better quality
-    const QUALITY_MULTIPLIER = 2; // Render at 2x resolution
+    // const QUALITY_MULTIPLIER = 2; // Render at 2x resolution
+    const QUALITY_MULTIPLIER = MagazineView.getOptimalRenderScale();
     const renderScale = baseScale * QUALITY_MULTIPLIER;
 
     // Get viewports
