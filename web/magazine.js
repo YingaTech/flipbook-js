@@ -213,7 +213,6 @@ var MagazineView = {
     }
 
     // IMPROVEMENT: Render at higher scale for better quality
-    // const QUALITY_MULTIPLIER = 2; // Render at 2x resolution
     const QUALITY_MULTIPLIER = MagazineView.getOptimalRenderScale();
     const renderScale = baseScale * QUALITY_MULTIPLIER;
 
@@ -554,14 +553,14 @@ var MagazineView = {
         if (MagazineView.currentPage > 1)
           $("#magazine").turn("page", MagazineView.currentPage);
 
-        if(!MagazineView.isMobile) {
+        if (!MagazineView.isMobile) {
           $("#magazineContainer").zoom({
             max: MagazineView.maxScale,
             flipbook: $("#magazine"),
             when: {
               doubleTap: function(event) {
-                if ($(this).zoom("value") == 1) {
-                  $("#magazine").removeClass("transition").removeClass("animated").addClass("zoom-in");
+                if ($(this).zoom("value") === 1) {
+                  $("#magazine").removeClass("transition animated").addClass("zoom-in");
                   $(this).zoom("zoomIn", event);
                 } else {
                   $(this).zoom("zoomOut");
@@ -581,12 +580,11 @@ var MagazineView = {
                 MagazineView.resizeViewport();
               },
               zoomOut: function() {
-                setTimeout(function() {
-                  $("#magazine").addClass("transition")
+                setTimeout(() => {
+                  $("#magazine")
+                      .addClass("transition")
                       .css({
-                        marginTop: `${($(window).height() -
-                            $("#magazine").height()) /
-                        2}px`
+                        marginTop: `${($(window).height() - $("#magazine").height()) / 2}px`
                       })
                       .addClass("animated")
                       .removeClass("zoom-in");
@@ -596,47 +594,28 @@ var MagazineView = {
             }
           });
         } else {
-          new window.PinchZoom.default(
+          const pinchZoomInstance = new window.PinchZoom.default(
               document.querySelector("#magazineContainer"),
-              { zoomOutFactor: 1, use2d: false }
+              {zoomOutFactor: 1, use2d: false}
           );
 
-          // Track zoom state more reliably
           let isCurrentlyZoomed = false;
 
-          document.addEventListener("pz_doubletap", function() {
-            // Toggle zoom state and disable/enable page turning accordingly
+          document.addEventListener("pz_doubletap", () => {
             isCurrentlyZoomed = !isCurrentlyZoomed;
             $("#magazine").turn("disable", isCurrentlyZoomed);
           });
 
-          document.addEventListener("pz_zoomstart", function() {
-            // Disable page turning when zoom starts
+          document.addEventListener("pz_zoomstart", () => {
             isCurrentlyZoomed = true;
             $("#magazine").turn("disable", true);
           });
 
-          document.addEventListener("pz_zoomend", function() {
-            // Small delay to check final zoom level
-            setTimeout(() => {
-              // Check if we're back to original scale (zoomed out)
-              const currentScale = pinchZoomInstance.scale || 1;
-
-              if (currentScale <= 1.05) { // Small tolerance for scale = 1
-                isCurrentlyZoomed = false;
-                $("#magazine").turn("disable", false);
-              }
-            }, 150);
-          });
-
-          // Additional safety check - re-enable page turning if user taps when not zoomed
-          document.addEventListener("touchend", function() {
-            if (!isCurrentlyZoomed) {
-              const currentScale = pinchZoomInstance.scale || 1;
-              if (currentScale <= 1.05) {
-                $("#magazine").turn("disable", false);
-              }
-            }
+          document.addEventListener("pz_zoomend", () => {
+            const scale = pinchZoomInstance.zoomFactor;
+            const isZoomed = scale > 1.05; // More reliable threshold than 1.1
+            isCurrentlyZoomed = isZoomed;
+            $("#magazine").turn("disable", isZoomed);
           });
         }
         MagazineView.fixPageAspectRatio();
