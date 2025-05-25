@@ -616,15 +616,26 @@ var MagazineView = {
             $("#magazine").turn("disable", true);
           });
 
-          document.addEventListener("pz_zoomend", function(event) {
-            // Check if we're back to scale 1 (fully zoomed out)
-            const pinchZoom = event.target._pinchZoom || event.detail;
-            if (pinchZoom && pinchZoom.scale <= 1.1) { // Small tolerance for scale = 1
-              isCurrentlyZoomed = false;
-              $("#magazine").turn("disable", false);
-            } else {
-              isCurrentlyZoomed = true;
-              $("#magazine").turn("disable", true);
+          document.addEventListener("pz_zoomend", function() {
+            // Small delay to check final zoom level
+            setTimeout(() => {
+              // Check if we're back to original scale (zoomed out)
+              const currentScale = pinchZoomInstance.scale || 1;
+
+              if (currentScale <= 1.05) { // Small tolerance for scale = 1
+                isCurrentlyZoomed = false;
+                $("#magazine").turn("disable", false);
+              }
+            }, 150);
+          });
+
+          // Additional safety check - re-enable page turning if user taps when not zoomed
+          document.addEventListener("touchend", function() {
+            if (!isCurrentlyZoomed) {
+              const currentScale = pinchZoomInstance.scale || 1;
+              if (currentScale <= 1.05) {
+                $("#magazine").turn("disable", false);
+              }
             }
           });
         }
