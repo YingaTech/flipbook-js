@@ -335,14 +335,17 @@ var MagazineView = {
     `);
 
     $("#mainContainer .previous-button").on("click", () => {
+      if($("#loading-indicator").is(":visible")) return; // Prevent action if loading
       $("#magazine").turn("page", MagazineView.currentPage - (MagazineView.isMobile ? 1 : 2));
     });
 
     $("#mainContainer .next-button").on("click", () => {
+      if($("#loading-indicator").is(":visible")) return; // Prevent action if loading
       $("#magazine").turn("page", MagazineView.currentPage + (MagazineView.isMobile ? 1 : 2));
     });
 
     $(document).on("keyup", (e) => {
+      if($("#loading-indicator").is(":visible")) return; // Prevent action if loading
       if (e.key === "ArrowLeft") {
         $("#magazine").turn("page", MagazineView.currentPage - (MagazineView.isMobile ? 1 : 2));
       } else if (e.key === "ArrowRight") {
