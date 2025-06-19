@@ -181,54 +181,48 @@ var MagazineView = {
   renderPageToCache: function(page, callback) {
     const pageNumber = page.pageNumber;
 
-    // Skip if already in cache
     if (MagazineView.pageCache[pageNumber]) {
       if (callback) callback();
       return;
     }
 
     const destinationCanvas = document.createElement("canvas");
-
-    // A4 aspect ratio is 1:√2 (approximately 1:1.414)
     const A4_ASPECT_RATIO = 1 / 1.414;
-
     const unscaledViewport = page.getViewport(1);
     const divider = MagazineView.layout == "double" ? 2 : 1;
 
-    // Get the container dimensions
     const containerWidth = $("#mainContainer").width();
     const containerHeight = $("#mainContainer").height();
-
-    // Maximum available width based on layout
     const maxAvailableWidth = containerWidth / divider;
 
-    // Calculate scale to fit width while maintaining A4 aspect ratio
     let baseScale = maxAvailableWidth / unscaledViewport.width;
-
-    // Check if the height would fit when scaled by width
     const scaledHeight = unscaledViewport.width * baseScale / A4_ASPECT_RATIO;
     if (scaledHeight > containerHeight) {
-      // If too tall, scale based on height instead
       baseScale = containerHeight / (unscaledViewport.width / A4_ASPECT_RATIO);
     }
 
-    // IMPROVEMENT: Render at higher scale for better quality
     const QUALITY_MULTIPLIER = MagazineView.getOptimalRenderScale();
-    const renderScale = baseScale * QUALITY_MULTIPLIER;
+    const pixelRatio = window.devicePixelRatio || 1;
 
-    // Get viewports
-    const renderViewport = page.getViewport(renderScale);
+    // The base scale for PDF.js rendering should incorporate QUALITY_MULTIPLIER
+    // and then we'll adjust the canvas context for pixelRatio.
+    const pdfJsRenderScale = baseScale * QUALITY_MULTIPLIER;
+
+    // Get the viewport for PDF.js at the desired rendering quality (before DPR scaling)
+    const renderViewport = page.getViewport(pdfJsRenderScale);
+
+    // The display viewport is just for the CSS size
     const displayViewport = page.getViewport(baseScale);
 
-    // Set canvas internal resolution (what gets rendered)
-    destinationCanvas.width = renderViewport.width;
-    destinationCanvas.height = renderViewport.height;
+    // Set canvas internal resolution accounting for pixelRatio for the physical pixels
+    // This is the actual size of the bitmap that will be drawn to.
+    destinationCanvas.width = renderViewport.width * pixelRatio;
+    destinationCanvas.height = renderViewport.height * pixelRatio;
 
-    // Set canvas display size (what user sees) - CRITICAL!
+    // Set canvas display size (what user sees) - in CSS pixels
     destinationCanvas.style.width = displayViewport.width + "px";
     destinationCanvas.style.height = displayViewport.height + "px";
 
-    // Store information for later use
     destinationCanvas.setAttribute("data-page-number", pageNumber);
     destinationCanvas.setAttribute("data-display-width", displayViewport.width);
     destinationCanvas.setAttribute("data-display-height", displayViewport.height);
@@ -236,18 +230,24 @@ var MagazineView = {
 
     const ctx = destinationCanvas.getContext("2d");
 
-    // Enhanced rendering settings
+    // Scale the context to match the device pixel ratio.
+    // All subsequent drawing commands will be scaled up by this factor.
+    ctx.scale(pixelRatio, pixelRatio);
+
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = 'high';
 
     const renderContext = {
       canvasContext: ctx,
-      viewport: renderViewport,
+      // CRITICAL FIX: The viewport for PDF.js must correspond to the *unscaled*
+      // internal coordinate system after ctx.scale().
+      // So, we pass the renderViewport without the pixelRatio already applied to its scale,
+      // because ctx.scale() already handles that.
+      viewport: renderViewport, // Use the viewport derived from pdfJsRenderScale
       intent: 'display'
     };
 
     page.render(renderContext).promise.then(function() {
-      // Store the rendered canvas in cache
       MagazineView.pageCache[pageNumber] = destinationCanvas;
       if (callback) callback();
     }).catch(function(error) {
@@ -261,35 +261,41 @@ var MagazineView = {
     if (MagazineView.pageCache[pageNumber]) {
       const cachedCanvas = MagazineView.pageCache[pageNumber];
 
-      // Get the intended display size from the cached canvas attributes
       const displayWidth = parseFloat(cachedCanvas.getAttribute("data-display-width"));
       const displayHeight = parseFloat(cachedCanvas.getAttribute("data-display-height"));
 
-      // Create display canvas at correct size
-      const displayCanvas = document.createElement('canvas');
+      // Create a new canvas to return for display
+      const finalDisplayCanvas = document.createElement('canvas');
 
-      // Account for device pixel ratio for crisp display
-      const pixelRatio = Math.max(window.devicePixelRatio || 1, 1);
+      // The internal width/height of the new canvas should be the same as the cached one,
+      // which already includes the QUALITY_MULTIPLIER and pixelRatio.
+      finalDisplayCanvas.width = cachedCanvas.width;
+      finalDisplayCanvas.height = cachedCanvas.height;
 
-      displayCanvas.width = displayWidth * pixelRatio;
-      displayCanvas.height = displayHeight * pixelRatio;
-      displayCanvas.style.width = displayWidth + "px";
-      displayCanvas.style.height = displayHeight + "px";
+      // The CSS style width/height should be the original displayViewport size.
+      finalDisplayCanvas.style.width = displayWidth + "px";
+      finalDisplayCanvas.style.height = displayHeight + "px";
 
-      displayCanvas.setAttribute("data-page-number", pageNumber);
-      displayCanvas.id = "magCanvas" + pageNumber;
+      finalDisplayCanvas.setAttribute("data-page-number", pageNumber);
+      finalDisplayCanvas.id = "magCanvas" + pageNumber;
 
-      const ctx = displayCanvas.getContext('2d');
-      ctx.scale(pixelRatio, pixelRatio);
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = 'high';
+      const ctx = finalDisplayCanvas.getContext('2d');
 
-      // Draw the high-res cached canvas scaled down to display size
-      ctx.drawImage(cachedCanvas, 0, 0, displayWidth, displayHeight);
+      // No need to ctx.scale(pixelRatio, pixelRatio) here because the source
+      // cachedCanvas already has the pixelRatio factored into its internal resolution.
+      // We are directly drawing the high-res content.
 
-      callback(displayCanvas);
+      ctx.imageSmoothingEnabled = true; // Still good to have
+      ctx.imageSmoothingQuality = 'high'; // Still good to have
+
+      // Draw the cached (high-res) canvas onto the new display canvas directly
+      // The drawImage method will handle the implicit scaling from internal resolution
+      // to the CSS display size.
+      ctx.drawImage(cachedCanvas, 0, 0); // Draw the entire source canvas at its native resolution
+
+      callback(finalDisplayCanvas);
     } else {
-      // Render the page if not in cache
+      // ... (existing logic to render if not in cache)
       PDFViewerApplication.pdfDocument.getPage(pageNumber).then(function(page) {
         MagazineView.renderPageToCache(page, function() {
           MagazineView.getPageFromCache(pageNumber, callback);
@@ -306,16 +312,20 @@ var MagazineView = {
     const deviceMemory = navigator.deviceMemory || 4; // Default to 4GB if unknown
     const pixelRatio = window.devicePixelRatio || 1;
 
-    // Higher quality for devices with more memory and high-DPI displays
+
     if (deviceMemory >= 8 && pixelRatio >= 2) {
-      return 3; // Very high quality
-    } else if (deviceMemory >= 4 && pixelRatio >= 1.5) {
-      return 2.5; // High quality
-    } else if (deviceMemory >= 2) {
-      return 2; // Standard high quality
+      return 3;
     } else {
-      return 1.5; // Lower quality for limited devices
+      return 2.5;
     }
+
+    // else if (deviceMemory >= 4 && pixelRatio >= 1.5) {
+    //   return 2.5; // High quality
+    // } else if (deviceMemory >= 2) {
+    //   return 2; // Standard high quality
+    // } else {
+    //   return 1.5; // Lower quality for limited devices
+    // }
   },
 
   start: function() {
@@ -330,8 +340,8 @@ var MagazineView = {
         <div id="magazine"></div>
         <div id="loading-indicator" style="display:none;position:absolute;right:10px;top:10px;background:rgba(0,0,0,0.5);color:white;padding:5px;border-radius:5px;">Loading...</div>
       </div>
-      <button class="previous-button">&lt;</button>
-      <button class="next-button">&gt;</button>
+      <button class="previous-button">⮜</button>
+      <button class="next-button">⮞</button>
     `);
 
     $("#mainContainer .previous-button").on("click", () => {
