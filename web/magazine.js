@@ -340,8 +340,8 @@ var MagazineView = {
         <div id="magazine"></div>
         <div id="loading-indicator" style="display:none;position:absolute;right:10px;top:10px;background:rgba(0,0,0,0.5);color:white;padding:5px;border-radius:5px;">Loading...</div>
       </div>
-      <button class="previous-button">&#x2B9C;</button>
-      <button class="next-button">&#x2B9E;</button>
+      <button class="previous-button">&lt;</button>
+      <button class="next-button">&gt;</button>
     `);
 
     $("#mainContainer .previous-button").on("click", () => {
