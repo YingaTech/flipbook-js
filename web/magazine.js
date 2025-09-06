@@ -179,6 +179,7 @@ var MagazineView = {
 
   // Render a page to the cache
   renderPageToCache: function(page, callback) {
+    return;
     const pageNumber = page.pageNumber;
 
     if (MagazineView.pageCache[pageNumber]) {
@@ -920,4 +921,5 @@ var MagazineView = {
   isChrome: function() {
     return navigator.userAgent.indexOf("Chrome") != -1;
   }
+
 };
