@@ -359,6 +359,15 @@ var MagazineView = {
       $("#magazine").turn("page", MagazineView.currentPage + (MagazineView.isMobile ? 1 : 2));
     });
 
+    $(document).on("keydown", (e) => {
+      if($("#loading-indicator").is(":visible")) return; // Prevent action if loading
+
+      // Check if CTRL (or CMD on Mac) is pressed
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault();
+      }
+    });
+
     $(document).on("keyup", (e) => {
       if($("#loading-indicator").is(":visible")) return; // Prevent action if loading
       if (e.key === "ArrowLeft") {
