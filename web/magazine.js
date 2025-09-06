@@ -201,9 +201,6 @@ var MagazineView = {
             MagazineView.pageCache[i] = null;
             delete MagazineView.pageCache[i];
         });
-
-        $("#loading-indicator").text("Cache length: " + Object.keys(MagazineView.pageCache).length);
-        $("#loading-indicator").show();
     }
 
     const destinationCanvas = document.createElement("canvas");
