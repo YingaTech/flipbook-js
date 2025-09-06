@@ -187,9 +187,10 @@ var MagazineView = {
     // If we're on iOS, clear the cache before we render pages (safari engine is dogshit and leaks memory like a sieve)
     if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
         // Delete all pages in the cache
-        MagazineView.pageCache.forEach((page) => {
-            MagazineView.pageCache[page] = null;
-            delete MagazineView.pageCache[page];
+        MagazineView.pageCache.forEach((i) => {
+            if(page !== i && page !== i - 1 && page !== i + 1) { return; } // Keep current and adjacent pages in cache
+            MagazineView.pageCache[i] = null;
+            delete MagazineView.pageCache[i];
         });
     }
 
