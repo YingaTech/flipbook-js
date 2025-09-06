@@ -11830,7 +11830,7 @@ var defaultPreferences = null;
 function getDefaultPreferences() {
   if (!defaultPreferences) {
     defaultPreferences = Promise.resolve({
-      "showPreviousViewOnLoad": true,
+      "showPreviousViewOnLoad": false,
       "defaultZoomValue": "",
       "sidebarViewOnLoad": 0,
       "cursorToolOnLoad": 0,
