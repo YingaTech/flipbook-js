@@ -110,7 +110,11 @@ var MagazineView = {
 
   // Preload pages in the background
   preloadPages: function(currentPage) {
-    return;
+    // If we're on iOS, don't preload to save memory (safari engine is dogshit and leaks memory like a sieve)
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+      return;
+    }
+
     // Clear the queue first
     MagazineView.pageLoadQueue = [];
 
@@ -921,6 +925,4 @@ var MagazineView = {
   isChrome: function() {
     return navigator.userAgent.indexOf("Chrome") != -1;
   }
-
 };
-
