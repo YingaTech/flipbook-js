@@ -195,12 +195,15 @@ var MagazineView = {
         // Delete all pages in the cache
         Object.keys(MagazineView.pageCache).forEach((i) => {
             // Keep the current and adjacent pages in the cache
-            if(i >= pageNumber - 2 && i <= pageNumber + 2) { return; }
+            if(i >= pageNumber - 1 && i <= pageNumber + 1) { return; }
 
             // Otherwise null & clear
             MagazineView.pageCache[i] = null;
             delete MagazineView.pageCache[i];
         });
+
+        $("#loading-indicator").text("Cache length: " + Object.keys(MagazineView.pageCache).length);
+        $("#loading-indicator").show();
     }
 
     const destinationCanvas = document.createElement("canvas");
