@@ -110,6 +110,7 @@ var MagazineView = {
 
   // Preload pages in the background
   preloadPages: function(currentPage) {
+    return;
     // Clear the queue first
     MagazineView.pageLoadQueue = [];
 
@@ -179,7 +180,6 @@ var MagazineView = {
 
   // Render a page to the cache
   renderPageToCache: function(page, callback) {
-    return;
     const pageNumber = page.pageNumber;
 
     if (MagazineView.pageCache[pageNumber]) {
@@ -923,3 +923,4 @@ var MagazineView = {
   }
 
 };
+
