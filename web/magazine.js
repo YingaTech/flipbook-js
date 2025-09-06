@@ -330,7 +330,7 @@ var MagazineView = {
   getOptimalRenderScale: function() {
     // If we're on iOS, always return 1 to save memory (safari engine is dogshit and leaks memory like a sieve)
     if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-      return 1;
+      return 1.5;
     }
 
     // Adjust render scale based on device capabilities
