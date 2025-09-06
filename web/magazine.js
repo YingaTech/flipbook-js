@@ -188,11 +188,8 @@ var MagazineView = {
     if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
         // Delete all pages in the cache
         MagazineView.pageCache.forEach((i) => {
-            // Keep the current and adjacant pages in the cache
-            if(i === page || i === page - 1 || i === page + 1) {
-                if (callback) callback();
-                return;
-            }
+            // Keep the current and adjacent pages in the cache
+            if(i > page - 2 && i < page + 2) { return; }
 
             // Otherwise null & clear
             MagazineView.pageCache[i] = null;
