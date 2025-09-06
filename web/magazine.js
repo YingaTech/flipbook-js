@@ -184,6 +184,15 @@ var MagazineView = {
 
   // Render a page to the cache
   renderPageToCache: function(page, callback) {
+    // If we're on iOS, clear the cache before we render pages (safari engine is dogshit and leaks memory like a sieve)
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        // Delete all pages in the cache
+        MagazineView.pageCache.forEach((page) => {
+            MagazineView.pageCache[page] = null;
+            delete MagazineView.pageCache[page];
+        });
+    }
+
     const pageNumber = page.pageNumber;
 
     if (MagazineView.pageCache[pageNumber]) {
