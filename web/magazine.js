@@ -618,10 +618,18 @@ var MagazineView = {
                     false,
                     false
                 );
+                // Fix aspect ratio after resize
+                setTimeout(() => {
+                  MagazineView.fixPageAspectRatio();
+                }, 0);
               },
               zoomIn: function() {
                 $("#magazine").addClass("zoom-in");
                 MagazineView.resizeViewport();
+                // Fix aspect ratio after zoom in
+                setTimeout(() => {
+                  MagazineView.fixPageAspectRatio();
+                }, 50);
               },
               zoomOut: function() {
                 setTimeout(() => {
@@ -633,6 +641,8 @@ var MagazineView = {
                       .addClass("animated")
                       .removeClass("zoom-in");
                   MagazineView.resizeViewport();
+                  // Fix aspect ratio after zoom out
+                  MagazineView.fixPageAspectRatio();
                 }, 0);
               }
             }
