@@ -190,14 +190,25 @@ var MagazineView = {
       return;
     }
 
-    // If we're on iOS, clear the cache before we render pages (safari engine is dogshit and leaks memory like a sieve)
-    if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-        // Delete all pages in the cache
-        Object.keys(MagazineView.pageCache).forEach((i) => {
-            // Keep the current and adjacent pages in the cache
-            if(i >= pageNumber - 1 && i <= pageNumber + 1) { return; }
+    // Detect Safari (both iOS and desktop) - Safari's memory management is terrible
+    const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    const isDesktopSafari = isSafari && !isIOS;
 
-            // Otherwise null & clear
+    // Clear cache for Safari to prevent memory crashes
+    if (isIOS || isDesktopSafari) {
+        // Different cache windows based on platform
+        // iOS: Keep only ±1 page (very aggressive, Safari on iOS is extremely memory constrained)
+        // Desktop Safari: Keep ±4 pages (moderate, balances memory with smoothness)
+        const cacheWindow = isIOS ? 1 : 4;
+
+        // Delete all pages in the cache outside our window
+        Object.keys(MagazineView.pageCache).forEach((i) => {
+            const pageNum = parseInt(i);
+            // Keep the current page and pages within the cache window
+            if(pageNum >= pageNumber - cacheWindow && pageNum <= pageNumber + cacheWindow) { return; }
+
+            // Clear canvas and delete
             MagazineView.pageCache[i] = null;
             delete MagazineView.pageCache[i];
         });
@@ -946,7 +957,21 @@ var MagazineView = {
     PDFViewerApplication.pdfViewer.currentScale = MagazineView.oldScale;
     PDFViewerApplication.page = MagazineView.currentPage;
 
-    // Clear page cache to free memory
+    // Clear page cache to free memory (especially important for Safari)
+    const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    if (isSafari) {
+      // For Safari, explicitly clear each canvas before deletion
+      Object.keys(MagazineView.pageCache).forEach((i) => {
+        const canvas = MagazineView.pageCache[i];
+        if (canvas && canvas.getContext) {
+          const ctx = canvas.getContext('2d');
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+        MagazineView.pageCache[i] = null;
+        delete MagazineView.pageCache[i];
+      });
+    }
+
     MagazineView.pageCache = {};
     MagazineView.pageLoadQueue = [];
     MagazineView.isLoading = false;
