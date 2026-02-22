@@ -76,7 +76,7 @@
   align-items: center;
 }
 
-.previous-button, .next-button {
+.previous-button, .next-button, .help-button {
   font-size: 40px;
   font-weight: bold;
   cursor: pointer;
@@ -95,4 +95,283 @@
 
 .next-button {
   right: 10px;
+}
+
+.help-button {
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  font-size: 14px;
+  font-weight: normal;
+  padding: 4px 12px;
+}
+
+/* Magazine Help Popup Styles */
+.magazine-help-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 100000;
+  animation: fadeIn 0.3s ease-in-out;
+  backdrop-filter: blur(4px);
+}
+
+.magazine-help-overlay.hiding {
+  animation: fadeOut 0.3s ease-in-out;
+}
+
+.magazine-help-dialog {
+  background: #ffffff;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.4s ease-out;
+  position: relative;
+}
+
+.magazine-help-header {
+  padding: 32px 32px 24px;
+  text-align: center;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.magazine-help-header h2 {
+  margin: 0 0 12px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.magazine-help-header p {
+  margin: 0;
+  font-size: 16px;
+  color: #6b7280;
+}
+
+.magazine-help-content {
+  padding: 24px 32px;
+}
+
+.help-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.help-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 16px;
+  background: #f9fafb;
+  border-radius: 12px;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.help-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.help-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.help-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.help-text strong {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.help-text span {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.5;
+}
+
+.magazine-help-footer {
+  padding: 24px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.magazine-help-button {
+  /*background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
+  background: #667eea;
+  color: #ffffff;
+  border: none;
+  padding: 14px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 4px 14px rgba(102, 126, 234, 0.4);
+}
+
+.magazine-help-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.magazine-help-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+}
+
+.magazine-help-dont-show {
+  font-size: 13px;
+  color: #9ca3af;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.magazine-help-dont-show:hover {
+  color: #6b7280;
+  text-decoration: underline;
+}
+
+/* Device-specific visibility */
+.desktop-only {
+  display: flex;
+}
+
+.mobile-only {
+  display: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(30px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Mobile Styles */
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: flex;
+  }
+
+  .magazine-help-dialog {
+    width: 95%;
+    max-width: none;
+    border-radius: 12px;
+  }
+
+  .magazine-help-header {
+    padding: 24px 20px 16px;
+  }
+
+  .magazine-help-header h2 {
+    font-size: 24px;
+  }
+
+  .magazine-help-header p {
+    font-size: 14px;
+  }
+
+  .magazine-help-content {
+    padding: 16px 20px;
+  }
+
+  .help-section {
+    gap: 16px;
+  }
+
+  .help-item {
+    padding: 12px;
+    gap: 12px;
+  }
+
+  .help-icon {
+    font-size: 28px;
+    width: 42px;
+    height: 42px;
+  }
+
+  .help-text strong {
+    font-size: 15px;
+  }
+
+  .help-text span {
+    font-size: 13px;
+  }
+
+  .magazine-help-footer {
+    padding: 16px 20px 24px;
+  }
+
+  .magazine-help-button {
+    width: 100%;
+    padding: 16px 24px;
+    font-size: 16px;
+  }
+}
+
+/* Tablet detection - prioritize mobile view for tablets */
+@media (max-width: 1024px) and (hover: none) and (pointer: coarse) {
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: flex;
+  }
 }

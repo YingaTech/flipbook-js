@@ -31,8 +31,8 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <title>PDF.js viewer</title>
 
-    <link rel="stylesheet" href="viewer.css" />
-    <link rel="stylesheet" href="magazine.css" />
+    <link rel="stylesheet" href="viewer.css?v=2026-02-22" />
+    <link rel="stylesheet" href="magazine.css?v=2026-02-22" />
     <link rel="stylesheet" href="loading.css" />
 
     <!-- This snippet is used in production (included from viewer.html) -->
@@ -43,7 +43,7 @@
     />
     <script src="../build/pdf.js"></script>
 
-    <script src="viewer.js?v=2025-09-06"></script>
+    <script src="viewer.js?v=2026-02-22"></script>
     <style>
       #btn-download{
         position: fixed;
@@ -69,6 +69,85 @@
         Starting up...
       </div>
     </div>
+
+    <!-- Magazine Help Popup -->
+    <div id="magazineHelpOverlay" class="magazine-help-overlay" style="display: none;">
+      <div class="magazine-help-dialog">
+        <div class="magazine-help-header">
+          <h2>Welcome</h2>
+          <p>Here's how to navigate through the magazine</p>
+        </div>
+
+        <div class="magazine-help-content">
+          <!-- Desktop Instructions -->
+          <div class="help-section desktop-only">
+            <div class="help-item">
+              <div class="help-icon">⌨️</div>
+              <div class="help-text">
+                <strong>Arrow Keys</strong>
+                <span>Use the arrow keys on your keyboard to turn the pages ← →</span>
+              </div>
+            </div>
+            <div class="help-item">
+              <div class="help-icon">🖱️</div>
+              <div class="help-text">
+                <strong>On-Screen Buttons</strong>
+                <span>Or you can click the  &lt; &gt; buttons on screen</span>
+              </div>
+            </div>
+            <div class="help-item">
+              <div class="help-icon">👆</div>
+              <div class="help-text">
+                <strong>Page Corners</strong>
+                <span>Click and drag page corners to flip them manually</span>
+              </div>
+            </div>
+            <div class="help-item">
+              <div class="help-icon">🔍</div>
+              <div class="help-text">
+                <strong>Zoom</strong>
+                <span>Double-click to zoom in/out</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mobile/Tablet Instructions -->
+          <div class="help-section mobile-only">
+            <div class="help-item">
+              <div class="help-icon">👉</div>
+              <div class="help-text">
+                <strong>On-Screen Buttons</strong>
+                <span>Tap the &lt; &gt; buttons on screen to turn the pages</span>
+              </div>
+            </div>
+            <div class="help-item">
+              <div class="help-icon">👆</div>
+              <div class="help-text">
+                <strong>Page Corners</strong>
+                <span>Or swipe from page corners to turn them manually</span>
+              </div>
+            </div>
+            <div class="help-item">
+              <div class="help-icon">🤏</div>
+              <div class="help-text">
+                <strong>Zoom</strong>
+                <span>Pinch with two fingers to zoom in/out</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="magazine-help-footer">
+          <button id="magazineHelpContinue" class="magazine-help-button">
+            Got it, let's go!
+          </button>
+          <a href="#" id="magazineHelpDontShow" class="magazine-help-dont-show">
+            Don't show this again
+          </a>
+        </div>
+      </div>
+    </div>
+
     <div id="outerContainer">
       <button id="btn-download" style="display: none;" onclick="window.open(window.url_download)">
         DOWNLOAD
@@ -855,7 +934,7 @@
     <script src="../turnjs4/lib/zoom.min.js"></script>
     <script src="../turnjs4/lib/pinch-zoom.umd.js"></script>
     <script src="debugger.js"></script>
-    <script src="magazine.js?v=2025-12-29"></script>
+    <script src="magazine.js?v=2026-02-22"></script>
     <script type="text/javascript">
       $(document).ready(function() {
         MagazineView.init();

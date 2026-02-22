@@ -25,6 +25,56 @@ var MagazineView = {
   isLoading: false, // Flag to track if pages are currently being loaded
   devicePixelRatio: window.devicePixelRatio || 1, // Get device pixel ratio for high-DPI displays
 
+  // Show help popup
+  showHelpPopup: function() {
+    // Show the popup
+    const overlay = $('#magazineHelpOverlay');
+    overlay.fadeIn(300);
+
+    // Add event listener to the continue button (closes without saving)
+    $('#magazineHelpContinue').off('click').on('click', function() {
+      MagazineView.closeHelpPopup(false);
+    });
+
+    // Add event listener to "don't show again" link (saves preference)
+    $('#magazineHelpDontShow').off('click').on('click', function(e) {
+      e.preventDefault();
+      MagazineView.closeHelpPopup(true);
+    });
+
+    // Allow ESC key to close (desktop only)
+    if (!MagazineView.isMobile) {
+      $(document).off('keyup.helpPopup').on('keyup.helpPopup', function(e) {
+        if (e.key === 'Escape') {
+          MagazineView.closeHelpPopup(false);
+        }
+      });
+    }
+  },
+
+  // Close help popup and optionally save preference
+  closeHelpPopup: function(savePreference) {
+    const overlay = $('#magazineHelpOverlay');
+
+    // Add hiding class for fade-out animation
+    overlay.addClass('hiding');
+
+    // Wait for animation to complete before hiding
+    setTimeout(function() {
+      overlay.fadeOut(0, function() {
+        overlay.removeClass('hiding');
+      });
+    }, 300);
+
+    // Save to localStorage if requested
+    if (savePreference) {
+      localStorage.setItem('magazineHelpSeen', 'true');
+    }
+
+    // Remove ESC key listener
+    $(document).off('keyup.helpPopup');
+  },
+
   init: function() {
     //Add button download on magazineMode
     $("#toolbarViewerRight").prepend(
@@ -374,17 +424,24 @@ var MagazineView = {
         <div id="loading-indicator" style="display:none;position:absolute;right:10px;top:10px;background:rgba(0,0,0,0.5);color:white;padding:5px;border-radius:5px;">Loading...</div>
       </div>
       <button class="previous-button">&lt;</button>
+      <button class="help-button">Click here for help</button>
       <button class="next-button">&gt;</button>
     `);
 
+    $("#mainContainer .help-button").on("click", () => {
+      MagazineView.showHelpPopup();
+    });
+
     $("#mainContainer .previous-button").on("click", () => {
       if($("#loading-indicator").is(":visible")) return; // Prevent action if loading
-      $("#magazine").turn("page", MagazineView.currentPage - (MagazineView.isMobile ? 1 : 2));
+      const step = MagazineView.isMobile ? 1 : 2;
+      $("#magazine").turn("page", Math.max(1, MagazineView.currentPage - step));
     });
 
     $("#mainContainer .next-button").on("click", () => {
       if($("#loading-indicator").is(":visible")) return; // Prevent action if loading
-      $("#magazine").turn("page", MagazineView.currentPage + (MagazineView.isMobile ? 1 : 2));
+      const step = MagazineView.isMobile ? 1 : 2;
+      $("#magazine").turn("page", Math.min(MagazineView.maxPages, MagazineView.currentPage + step));
     });
 
     $(document).on("keydown", (e) => {
@@ -398,10 +455,11 @@ var MagazineView = {
 
     $(document).on("keyup", (e) => {
       if($("#loading-indicator").is(":visible")) return; // Prevent action if loading
+      const step = MagazineView.isMobile ? 1 : 2;
       if (e.key === "ArrowLeft") {
-        $("#magazine").turn("page", MagazineView.currentPage - (MagazineView.isMobile ? 1 : 2));
+        $("#magazine").turn("page", Math.max(1, MagazineView.currentPage - step));
       } else if (e.key === "ArrowRight") {
-        $("#magazine").turn("page", MagazineView.currentPage + (MagazineView.isMobile ? 1 : 2));
+        $("#magazine").turn("page", Math.min(MagazineView.maxPages, MagazineView.currentPage + step));
       }
     });
 
@@ -684,7 +742,15 @@ var MagazineView = {
           });
         }
         MagazineView.fixPageAspectRatio();
-        $("#overlay").fadeOut();
+        $("#overlay").fadeOut(300, function() {
+          // Show help popup after overlay fades out (check localStorage first)
+          setTimeout(function() {
+            const hasSeenHelp = localStorage.getItem('magazineHelpSeen');
+            if (hasSeenHelp !== 'true') {
+              MagazineView.showHelpPopup();
+            }
+          }, 200);
+        });
       }, 10);
     });
   },
