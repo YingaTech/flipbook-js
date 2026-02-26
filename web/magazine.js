@@ -424,7 +424,7 @@ var MagazineView = {
         <div id="loading-indicator" style="display:none;position:absolute;right:10px;top:10px;background:rgba(0,0,0,0.5);color:white;padding:5px;border-radius:5px;">Loading...</div>
       </div>
       <button class="previous-button">&lt;</button>
-      <button class="help-button">Click here for help</button>
+      <button class="help-button">Need Help?</button>
       <button class="next-button">&gt;</button>
     `);
 
