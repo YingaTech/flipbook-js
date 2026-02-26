@@ -76,7 +76,7 @@
   align-items: center;
 }
 
-.previous-button, .next-button, .help-button {
+.previous-button, .next-button {
   font-size: 40px;
   font-weight: bold;
   cursor: pointer;
@@ -98,12 +98,20 @@
 }
 
 .help-button {
+  font-size: 20px;
+  font-weight: bold;
+  cursor: pointer;
+  position: absolute;
+  color: #fff;
+  background: #0a5491;
+  padding: 7px 20px;
+  border-radius:50px;
+  border:2px solid #fff;
+  box-shadow: 0 0 0 2px rgb(10 84 145);
+  bottom: 10px;
   left: 50%;
   transform: translateX(-50%);
   z-index: 9999;
-  font-size: 14px;
-  font-weight: normal;
-  padding: 4px 12px;
 }
 
 /* Magazine Help Popup Styles */
@@ -177,11 +185,6 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.help-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
 .help-icon {
   font-size: 32px;
   flex-shrink: 0;
@@ -225,7 +228,6 @@
 }
 
 .magazine-help-button {
-  /*background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);*/
   background: #0a5491;
   color: #ffffff;
   border: none;

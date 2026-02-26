@@ -726,24 +726,21 @@ var MagazineView = {
 
           document.addEventListener("pz_doubletap", () => {
             isCurrentlyZoomed = !isCurrentlyZoomed;
-            // $("#magazine").turn("disable", isCurrentlyZoomed);
           });
 
           document.addEventListener("pz_zoomstart", () => {
             isCurrentlyZoomed = true;
-            // $("#magazine").turn("disable", true);
           });
 
           document.addEventListener("pz_zoomend", () => {
             const scale = pinchZoomInstance.zoomFactor;
-            const isZoomed = scale > 1.05; // More reliable threshold than 1.1
+            const isZoomed = scale > 1.05;
             isCurrentlyZoomed = isZoomed;
-            // $("#magazine").turn("disable", isZoomed);
           });
         }
         MagazineView.fixPageAspectRatio();
         $("#overlay").fadeOut(300, function() {
-          // Show help popup after overlay fades out (check localStorage first)
+          // Show the help popup after the overlay fades out (check localStorage first)
           setTimeout(function() {
             const hasSeenHelp = localStorage.getItem('magazineHelpSeen');
             if (hasSeenHelp !== 'true') {
